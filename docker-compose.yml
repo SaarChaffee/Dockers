@@ -1,0 +1,55 @@
+version: "3"
+services:
+  bot:
+    build: ../yobot
+    ports:
+      - "9222:9222"
+    container_name: skadi
+    restart: on-failure
+    volumes:
+      - ../yobot:/home/yobot/yobot
+    networks:
+      - bot_net
+
+  hosbot:
+    build: ../HoshinoBot
+    ports:
+      - "9221:9221"
+    container_name: skadi_hoshino
+    restart: on-failure
+    volumes:
+      - ../HoshinoBot:/home/HoshinoBot/HoshinoBot
+    networks:
+      - bot_net
+
+  mirai:
+    image: lqbing/cqhttp-mirai
+    restart: always
+    stdin_open: true
+    tty: true
+    volumes:
+      - ../mirai/config.txt:/workdir/config.txt
+      - ../mirai/setting.yml:/workdir/plugins/setting.yml
+    networks:
+      - bot_net
+
+  atri:
+    build: ../ATRI
+    volumes:
+      - "/etc/localtime:/etc/localtime"
+      - "../ATRI/:/app/"
+    restart: on-failure
+    container_name: atri
+    ports:
+      - "9223:9223" # 映射端口到宿主机 宿主机端口:容器端口
+    environment:
+      - APP_MODULE=bot:app # 配置 asgi 入口
+      # - SECRET # 通过 SECRET=xxx nb up -d 传递密钥
+      # - ACCESS_TOKEN # 通过 ACCESS_TOKEN=xxx nb up -d 传递密钥
+      # - MAX_WORKERS=1 # 如果你有多个QQ，且存在 self_id 指定，多个 worker 会导致无法找到其他 websocket 连接
+    networks:
+      - bot_net
+
+networks:
+  bot_net:
+    driver: bridge
